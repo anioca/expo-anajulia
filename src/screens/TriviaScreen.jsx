@@ -6,6 +6,7 @@ export default function TriviaScreen() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
+  const [userAnswer, setUserAnswer] = useState(null);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -27,6 +28,7 @@ export default function TriviaScreen() {
       if (answer === correctAnswer) {
         setScore(score + 1);
       }
+      setUserAnswer(answer);
       setAnswered(true);
     }
   };
@@ -35,51 +37,77 @@ export default function TriviaScreen() {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setAnswered(false);
+      setUserAnswer(null);
     } else {
-      // Aqui você pode fazer algo quando todas as perguntas forem respondidas
       console.log("Todas as perguntas foram respondidas!");
     }
   };
 
+  const renderQuestion = ({ item }) => (
+    <View style={styles.questionContainer}>
+      <Text style={styles.questionText}>Question {currentQuestionIndex + 1}:</Text>
+      <Text style={styles.questionText}>{item.question}</Text>
+      {[...item.incorrect_answers, item.correct_answer].sort().map((answer, i) => (
+        <Button
+          key={i}
+          title={answer}
+          onPress={() => handleAnswer(answer)}
+          disabled={answered}
+          color={userAnswer === answer ? (answer === item.correct_answer ? '#32CD32' : '#FF0000') : '#67C7F2'}
+          style={styles.answerButton}
+        />
+      ))}
+      <Button
+        title="Próxima Pergunta"
+        onPress={handleNextQuestion}
+        disabled={!answered}
+        color="#F46799"
+        style={styles.nextButton}
+      />
+    </View>
+  );
+
+  if (questions.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View>
-      <Text>Pontuação: {score}</Text>
+    <View style={styles.container}>
+      <Text style={styles.score}>Pontuação: {score}</Text>
       <FlatList
-        data={questions}
+        data={[questions[currentQuestionIndex]]}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <View>
-            <Text>Question {index + 1}:</Text>
-            <Text>{item.question}</Text>
-            {item.incorrect_answers.map((answer, i) => (
-              <Button
-                key={i}
-                title={answer}
-                onPress={() => handleAnswer(answer)}
-                disabled={answered}
-                color="#67C7F2" // Defina a cor do botão
-                style={styles.answerButton} // Estilo personalizado para o botão
-              />
-            ))}
-            <Button
-              title="Próxima Pergunta"
-              onPress={handleNextQuestion}
-              disabled={!answered}
-              color="#F46799" // Defina a cor do botão
-              style={styles.nextButton} // Estilo personalizado para o botão
-            />
-          </View>
-        )}
+        renderItem={renderQuestion}
+        extraData={answered}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  score: {
+    fontSize: 20,
+    marginBottom: 16,
+  },
+  questionContainer: {
+    marginBottom: 20,
+  },
+  questionText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
   nextButton: {
-    marginTop: 10, // Espaçamento superior para separar do conteúdo acima
+    marginTop: 10,
   },
   answerButton: {
-    marginVertical: 5, // Espaçamento vertical entre os botões de resposta
+    marginVertical: 5,
   },
 });
